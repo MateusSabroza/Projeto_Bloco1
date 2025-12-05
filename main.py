@@ -385,8 +385,9 @@ try:
     cursor=conn.cursor()
     print("Conectado ao Oracle\n\n")
     
+    if __name__ == "__main__":
+        main()
+
+    
 except Exception as e :
     print(f"Erro ao conectar ao banco: {e}")
-
-if __name__ == "__main__":
-    main()
