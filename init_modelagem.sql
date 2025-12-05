@@ -134,7 +134,6 @@ INSERT INTO PRODUTO (NOME, PRECO, QTD_ESTOQUE, DESCRICAO)
 VALUES ('Filtro de Linha 5 Tomadas', 35.00, 180, 'Proteção contra surtos e picos de energia.');
 
 
-
 INSERT INTO PRODUTO (NOME, PRECO, QTD_ESTOQUE, DESCRICAO) 
 VALUES ('Monitor LED 24" Ultra HD', 850.00, 25, 'Monitor de alta resolução para jogos e trabalho.');
 
@@ -151,7 +150,8 @@ VALUES ('Assinatura Antivírus 1 Ano', 79.90, 999, 'Licença digital para prote�
 INSERT INTO PRODUTO (NOME, PRECO, QTD_ESTOQUE, DESCRICAO) 
 VALUES ('Roteador Mesh Wi-Fi 6', 450.50, 40, 'Cobertura total e velocidade máxima.');
 
-VALUES ('Bateria Externa 10000mAh', 110.00, 70, 'Carregador portátil de alta capacidade, ideal para viagens.');
+INSERT INTO PRODUTO (NOME, PRECO, QTD_ESTOQUE, DESCRICAO) 
+VALUES  ('Bateria Externa 10000mAh', 110.00, 70, 'Carregador portátil de alta capacidade, ideal para viagens.');
 
 INSERT INTO PRODUTO (NOME, PRECO, QTD_ESTOQUE, DESCRICAO) 
 VALUES ('Adaptador USB-C p/ HDMI', 65.00, 140, 'Converte sinal de USB-C para HDMI em notebooks e tablets.');
@@ -166,30 +166,13 @@ INSERT INTO PRODUTO (NOME, PRECO, QTD_ESTOQUE, DESCRICAO)
 VALUES ('Kit Limpeza para Monitores', 19.90, 250, 'Solução e pano de microfibra para telas.');
 
 
---- Começando a parte de configuração de busca vetorial da oracle
-create or replace directory model_dir as '/home/oracle/mymodel';
-
-
-begin
-
-  dbms_vector.drop_onnx_model (
-    model_name => 'ALL_MINILM_L12_V2',
-    force => true);
-
-  dbms_vector.load_onnx_model (
-    directory  => 'model_dir',
-    file_name  => 'all_MiniLM_L12_v2.onnx',
-    model_name => 'ALL_MINILM_L12_V2');
-end;
-/
-
 
 alter table produto add (
   produto_vector vector
 
 );
 
-desc produto;
+
 update PRODUTO
 set    produto_vector = vector_embedding(all_minilm_l12_v2 using concat(NOME, PRECO, QTD_ESTOQUE, DESCRICAO ) as data);
 

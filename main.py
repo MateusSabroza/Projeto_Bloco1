@@ -29,9 +29,9 @@ def main():
         if entrada=='1':
             print('Cadastro de produto')
             cadatro_produtos()
-                   
+            
         elif entrada=='2':
-            print('Selecionar itens do catalogo')
+            print('Selecionar itens do catálogo')
             selecionar_catalogo()
             
         elif entrada=='3':
@@ -41,6 +41,7 @@ def main():
             print('Até a próxima!')
             conn.close()
             print('Conexão com Oracle fechada')
+            
             break
 
   
@@ -107,19 +108,25 @@ def cadatro_produtos()->None:
             qtd=int(input('Qual a quantidade?\n'))
         except:
             print(f'Formato Invalido\n  Escreva no formato 100')
+        
+        descricao=input('Qual a descrição do produto?\n')
             
         if nome and preco  and qtd :
             while True:
-                print(f'O seu produto vai ser registrado como:\nNome:{nome} , Preço:R${preco} , Quantidade:{qtd}')
+                print(f'O seu produto vai ser registrado como:\nNome:{nome} , Preço:R${preco} , Quantidade:{qtd}, Descrição:{descricao}')
                 try:
                   entrada=int(input('Confirma?\n1-Sim\n2-Não\n\n'))
                   if entrada ==1:
                       try:
-                          produto={'nome':nome,'preco':preco,'qtd':qtd}
-                          comando=f'INSERT INTO PRODUTO (NOME,PRECO,QTD_ESTOQUE) VALUES (:nome,:preco,:qtd)'
+                          produto={'nome':nome,'preco':preco,'qtd':qtd, 'descricao':descricao}
+                          comando=f'INSERT INTO PRODUTO (NOME,PRECO,QTD_ESTOQUE,DESCRICAO) VALUES (:nome,:preco,:qtd,:descricao)'
                           cursor.execute(comando,produto)
+                          # Atualiza a indexação do vetor
+                          comando=f'update PRODUTO set produto_vector = vector_embedding(all_minilm_l12_v2 using concat(NOME, PRECO, QTD_ESTOQUE, DESCRICAO ) as data);'
+                          cursor.execute(comando)
                           conn.commit()
                           print('Produto Registrado!') 
+                          
                           return
                       except Exception as e:
                           conn.rollback()
@@ -298,10 +305,12 @@ def controlar_carrinho():
     
     entrada=input(f'O que deseja fazer com o carrinho?\nO total da compra deu: R${total:.2f}\n1-Fechar pedido\n2-Tirar/Alterar um item\n3-Esvaziar Carrinho\n4-Voltar\n')
     if entrada=='1':
+        print(' '*5)
         try:
             ######## Inserção na tabela venda ########
             venda_id_gerado = cursor.var(oracledb.NUMBER)
-            venda={'data_venda':datetime.now(),'VALOR_TOTAL': total, 'venda_id': venda_id_gerado}
+            data=datetime.now()
+            venda={'data_venda':data,'VALOR_TOTAL': total, 'venda_id': venda_id_gerado}
             comando=f'INSERT INTO VENDA (DATA_VENDA,VALOR_TOTAL) VALUES (:data_venda,:VALOR_TOTAL) RETURNING ID INTO :venda_id'
             cursor.execute(comando,venda)
             
@@ -320,8 +329,9 @@ def controlar_carrinho():
             
             
             conn.commit()
-            print('Venda Registrado!') 
+            print(f'Venda Registrado!\nValor total:R${total:.2f}\nID da venda:{venda_id}\nData da venda:{data.strftime('%d/%m/%Y | %H:%M:%S ')}') 
             carrinho={}
+            print(' '*3)
             return 
         except Exception as e:
           conn.rollback()
@@ -365,7 +375,6 @@ def controlar_carrinho():
 
 try:
 
-    # Example for OracleDB connection (adjust for your specific driver)
     conn = oracledb.connect(
         user=USER, 
         password=PASSWORD, 
