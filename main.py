@@ -196,7 +196,7 @@ def selecionar_catalogo()->None:
     if not list(estoque.values()):
         print('Checando o banco')
         try:
-            cursor.execute('Select * from PRODUTO')
+            cursor.execute('Select ID, NOME, PRECO, QTD_ESTOQUE, DESCRICAO  from PRODUTO ORDER BY ID')
         except Exception as e:
             print(f"Erro ao consulta o banco: {e}")
             return
@@ -216,9 +216,39 @@ def selecionar_catalogo()->None:
         
     while True:
         try:
-            entrada=input('Escreva o ID do item que deseja:\nEscreva "q" pra voltar\n')
+            entrada=input('Escreva o ID do item que deseja:\nEscreva "b" para buscar produtos\nEscreva "q" pra voltar\n')
             if entrada=='q':
                 break
+            if entrada=='b':
+                try:
+                    busca='SELECT vector_distance(produto_vector, (vector_embedding(all_minilm_l12_v2 using :frase_pesquisa as data))) as distancia,ID, NOME, PRECO, QTD_ESTOQUE, DESCRICAO FROM PRODUTO order by 1 fetch approximate first 3 rows only'
+                    entrada=input('O que busca aqui? Vou buscar o item mais próximo do que procura\n')
+                    pesquisa={'frase_pesquisa':entrada}
+                    print('Buscando no banco...')
+                    cursor.execute(busca,pesquisa)
+                    
+                    busca_produtos=cursor.fetchall()
+                    
+                    
+                    busca_colunas=[col[0] for col in cursor.description]
+                    busca_estoque={}
+                    print(busca_produtos)
+                    for produto_tupla in busca_produtos:
+                        print(produto_tupla)
+                        produto_dict=dict(zip(busca_colunas,produto_tupla))
+                        # Se a lista estiver vazia, avisa o usuário:
+                        busca_estoque[produto_dict["ID"]]=produto_dict
+                    if not busca_produtos:
+                        print("Nenhum produto encontrado no catálogo.")
+                
+                    print("\n### Produtos Similares ###")
+                
+                    saida_do_diconario(busca_colunas,busca_estoque)        
+                    
+                    
+                except Exception as e:
+                    print(f"Erro ao consulta o banco: {e}")
+                
             else:
                 id=int(entrada)
                 nome=estoque[id]['NOME']
